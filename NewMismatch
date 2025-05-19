@@ -1,0 +1,63 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Load your data
+df = pd.read_csv('boot02.csv')
+time = df["Time"]
+value = df["Value"]
+
+# Define thresholds
+threshold_zero = 0.1
+threshold_low = -0.3
+threshold_high = 0.3
+
+# Define value ranges
+range_around_zero = (value >= -threshold_zero) & (value <= threshold_zero)
+range_going_low = (value <= threshold_low)
+range_going_up = (value >= threshold_high)
+
+# Find indices
+zero_indices = np.where(range_around_zero)[0]
+low_indices = np.where(range_going_low)[0]
+high_indices = np.where(range_going_up)[0]
+
+# Detect sequences
+sequences = []
+for i in range(len(zero_indices) - 1):
+    start_zero = zero_indices[i]
+    end_zero = zero_indices[i + 1]
+
+    low_between = low_indices[(low_indices > start_zero) & (low_indices < end_zero)]
+    if len(low_between) > 0:
+        start_low = low_between[0]
+        end_low = low_between[-1]
+
+        high_after = high_indices[high_indices > end_low]
+        sequence = {
+            'start_zero': start_zero,
+            'start_low': start_low,
+            'end_low': end_low,
+            'first_high_after_low': high_after[0] if len(high_after) > 0 else None,
+            'time': time[start_zero:end_zero+1].values,
+            'value': value[start_zero:end_zero+1].values
+        }
+        sequences.append(sequence)
+
+# Print summary
+print(f"Number of sequences detected: {len(sequences)}")
+
+# Plot
+plt.figure(figsize=(12, 6))
+plt.plot(time, value, label='Signal', color='gray', alpha=0.5)
+
+for idx, seq in enumerate(sequences):
+    plt.plot(seq['time'], seq['value'], label=f"Seq {idx+1}")
+
+plt.xlabel('Time')
+plt.ylabel('Value')
+plt.title('Detected Sequences: Zero → Low (→ High)')
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
