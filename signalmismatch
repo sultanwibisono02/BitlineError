@@ -1,0 +1,297 @@
+import pandas as pd 
+import matplotlib.pyplot as plt
+import numpy as np
+
+df = pd.read_csv('boot03_6M.csv')
+
+time = df["Time"]
+value = df["Value"]
+
+# threshold_increase = 1.0
+# threshold_stable = 0.1
+
+# #find indices where the signal increases significantly
+
+# # Find indices where the signal increases significantly
+# increase_indices = np.where(np.diff(value) > threshold_increase)[0] + 1
+# # Find indices where the signal stabilizes
+# stable_indices = np.where(np.abs(np.diff(value)) < threshold_stable)[0] + 1
+
+time_median = time.median()
+value_median = value.median()
+value_max = value.max()
+value_min = value.min()
+print("\ntime median", time_median)
+print("\nmax value", value_max)
+print("\nmin value",value_min)
+#define the range for "going high"
+
+range_around_zero = (value >= -0.1) & (value <= 0.1)
+range_going_low = (value <= -0.3) & (value >= value_min)
+range_going_up = (value >= 0.3) & (value <= value_max)
+
+
+#find indices where the value is withing the range
+zero_indices = np.where(range_around_zero)[0]
+high_indices = np.where(range_going_up)[0]
+low_indices = np.where(range_going_low)[0]
+
+##Uncategorized indices
+non_categorized = ~(range_around_zero | range_going_low | range_going_up)
+non_categorized_indices = np.where(non_categorized)[0]
+
+
+# print("\nHigh indices: ", high_indices)
+# print("\nlow indices: ", low_indices)
+
+diff_positive = value_max - 0.4
+diff_negative = value_min + 0.4
+
+# print("\npositive diff = ", diff_positive)
+# print("\nnegative diff = ", diff_negative)
+
+#High Time
+high_time = time.iloc[high_indices]
+high_value = value.iloc[high_indices]
+high_value_max = high_value.max()
+high_value_low = high_value.min()
+high_value_med = high_value.median()
+
+print("\nhigh value max", high_value_max)
+print("\nhigh value min", high_value_low)
+print("\nhigh Value med", high_value_med)
+
+high_time_start = time.iloc[high_indices[0]]
+high_time_end = time.iloc[high_indices[-1]]
+high_time_diff = high_time_end - high_time_start
+print("\nhigh time difference ", high_time_diff)
+
+#filter Low_indices to include values before high_indices[0]
+low_indices_1 = low_indices[low_indices < high_indices[0]]
+
+#low time
+low_time_start = time.iloc[low_indices_1[0]]
+low_time_end = time.iloc[low_indices_1[-1]]
+low_time_diff = low_time_end - low_time_start
+print("\ntime difference", low_time_diff)
+
+# low_time = time.iloc[low_indices]
+# low_value = value.iloc[low_indices]
+# low_value_max = low_value.max()
+# low_value_low = low_value.min()
+# low_value_med = low_value.median()
+
+# print("\nhigh value max", low_value_max)
+# print("\nhigh value min", low_value_low)
+# print("\nhigh Value med", low_value_med)
+
+# low_time_start = time.iloc[low_indices[0]]
+# low_time_end = time.iloc[low_indices[-1]]
+# low_time_diff = low_time_end - low_time_start
+print("\nlow time difference ", low_time_diff)
+
+#beginning 
+first_time = time.head(1).values[0]
+print("Intial time",first_time)
+
+
+
+#check for data points between the "going high" and "going low" states
+# if len(low_indices_1) > 0 and len(high_indices) > 0:
+#     time_low_end = time.iloc[low_indices_1[-1]]
+#     high_time_start = time.iloc[high_indices[0]]
+
+#     #check for data points in this interval
+#     in_between_indices = np.where ((time > time_low_end) & (time < high_time_start))[0]
+
+#     if len(in_between_indices) > 0:
+#         print("Data points available inbetween")
+#         print(df.iloc[in_between_indices])
+#         print("\nLast low index", low_indices_1[-1])
+#         print("\nFist High Index", high_indices[0])
+
+#     else:
+#         print("NO data points in between")
+# else:
+#     print("Not enoguh data points to determine the interval")
+
+
+plt.figure()
+plt.plot(time,value, label = 'Signal')
+
+# plt.xlim(0.2, time.tail(1).values[0])
+
+plt.plot(time[high_indices], value[high_indices], 'bo', label='Going High')
+plt.plot(time[low_indices], value[low_indices], 'ro', label='Going low')
+# plt.plot(time[low_indices_1[0]], value[low_indices_1[0]], 'go')
+# plt.plot(time[low_indices_1[-1]], value[low_indices_1[-1]], 'yo')
+plt.plot(time[zero_indices], value[zero_indices], 'yo', label='Going zero')
+plt.plot(time[non_categorized_indices], value[non_categorized_indices], 'go', label='Uncategorized')
+
+
+# plt.plot(time[in_between_indices], value[in_between_indices], 'go', label = 'Grey Area')
+
+# plt.plot(time_median, marker = 'o')
+# plt.plot(value_median, marker = 'x')
+# plt.axhline(y=0, color='r', linestyle = '--')
+# plt.axhline(y=high_value_max, color='g', linestyle = '--')
+# plt.axhline(y=high_value_low, color='b', linestyle = '--')
+# plt.axhline(y=high_value_med, color='r', linestyle = '-.')
+# plt.axvline(x=high_time_start, color='g', linestyle = '--')
+# plt.axvline(x=high_time_end, color='b', linestyle = '--')
+# plt.axhline(y=0.4, color='g', linestyle = '-.')
+# plt.axhline(y=-0.4, color='b', linestyle = '-.')
+
+
+plt.xlabel('Time')
+plt.ylabel('Value')
+plt.title('Signal wit State Markers')
+plt.legend(loc='upper right')
+plt.show()
+
+
+###################################################################################
+Code 2
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Load your data
+df = pd.read_csv('boot02.csv')
+time = df["Time"]
+value = df["Value"]
+
+# Define thresholds
+threshold_zero = 0.05
+threshold_low = -0.3
+threshold_high = 0.3
+
+# Define value ranges
+range_around_zero = (value >= -threshold_zero) & (value <= threshold_zero)
+range_going_low = (value <= threshold_low)
+range_going_up = (value >= threshold_high)
+
+# Find indices
+zero_indices = np.where(range_around_zero)[0]
+low_indices = np.where(range_going_low)[0]
+high_indices = np.where(range_going_up)[0]
+
+##Uncategorized indices
+non_categorized = ~(range_around_zero | range_going_low | range_going_up)
+non_categorized_indices = np.where(non_categorized)[0]
+
+def get_category(index):
+    if index in zero_indices:
+        return 'zero'
+    elif index in low_indices:
+        return 'low'
+    elif index in high_indices:
+        return 'high'
+    elif index in non_categorized_indices:
+        return 'in process'
+    else: return 'none'
+
+
+################################################################
+# First, categorize each index
+categories = []
+for idx in df.index:
+    val = df.loc[idx, 'Value']
+    if -0.05 <= val <= 0.05:
+        categories.append('zero')
+    elif val <= -0.3:
+        categories.append('low')
+    elif val >= 0.3:
+        categories.append('high')
+    else:
+        categories.append('in process')
+
+# Count category changes in a sliding window
+change_counts = []
+window_size = 50
+for i in range(len(categories)):
+    window = categories[max(0, i - window_size//2):min(len(categories), i + window_size//2)]
+    changes = sum(1 for j in range(1, len(window)) if window[j] != window[j-1])
+    # for j in range(1, len(window) - 1):
+    #     if window[j] != window[j-1] or window[j] != window[j+1]:
+    #         changes += 1
+    change_counts.append(changes)
+
+unstable_mask = np.array(change_counts) > 3
+###############################################################
+        
+
+#Loop through DataFrame index and detect changes
+previous_category = None
+transition_indices = []
+min_gap = 100
+last_transition_index = -min_gap
+
+for idx in df.index:
+    if unstable_mask[idx]:
+        continue
+
+    current_category = get_category(idx)
+    # if previous_category and current_category != previous_category :
+    #     print(f"Index {idx}: going from {previous_category} to {current_category}")
+
+    if (previous_category == 'zero'  or previous_category =='high') and current_category == 'low':
+        if idx - last_transition_index >= min_gap:
+            # print(f"Index {idx}: going from {previous_category} to {current_category}")
+            transition_indices.append((idx, 'going low'))
+            last_transition_index = idx
+    elif (previous_category == 'zero'  or previous_category =='low') and current_category == 'high':
+        if idx - last_transition_index >= min_gap:
+            # print(f"Index {idx}: going from {previous_category} to {current_category}")
+            transition_indices.append((idx, 'going high'))
+            last_transition_index = idx
+    elif (previous_category == 'low'  or previous_category =='high') and (current_category == 'zero' or current_category == 'in process'):
+        if idx - last_transition_index >= min_gap:
+            # print(f"Index {idx}: going from {previous_category} to {current_category}")
+            transition_indices.append((idx, 'going zero'))
+            last_transition_index = idx
+    # elif (previous_category == 'in process' and current_category == 'in process'):
+    #     continue
+
+    previous_category = current_category
+
+# for idx, message in transition_indices:
+#     print(f"Index {idx}: {message}")
+
+# for idx, seq in enumerate(zero_sequences):
+#     plt.plot(time[seq], value[seq], label=f"Seq {idx+1}")
+
+# print(zero_indices)
+# print()
+
+
+
+ 
+# Plot
+plt.figure(figsize=(12, 6))
+plt.plot(time, value, label='Signal', color='gray', alpha=0.5)   
+
+for idx,transition in transition_indices:
+    if transition == 'going high':
+        plt.axvline(x=time[idx], color='red', linestyle = '--', label=f'Transition at index {idx}')
+    if transition == 'going low':
+        plt.axvline(x=time[idx], color='blue', linestyle = '--', label=f'Transition at index {idx}')
+    if transition == 'going zero':
+        plt.axvline(x=time[idx], color='green', linestyle = '--', label=f'Transition at index {idx}')
+
+# plt.plot(time[zero_indices], value[zero_indices],'go' ,label='zero_indices',alpha=0.5)
+# plt.plot(time[high_indices], value[high_indices], 'bo', label='Going High')
+# plt.plot(time[low_indices], value[low_indices], 'ro', label='Going low')
+# plt.plot(time[non_categorized_indices], value[non_categorized_indices], 'yo', label='Uncategorized')
+# plt.plot(time[zero_indices], value[zero_indices], 'go', label='Going zero')
+        
+# plt.xlim(0.213, 0.214)
+
+plt.xlabel('Time')
+plt.ylabel('Value')
+plt.title('Detected Sequences: Zero → Low (→ High)')
+# plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
